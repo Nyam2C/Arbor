@@ -1,14 +1,14 @@
-import Database from 'better-sqlite3';
-import { runMigrations } from './migrations.js';
-import type { ArborNode, ArborEdge } from '../graph/models.js';
+import Database from "better-sqlite3";
+import { runMigrations } from "./migrations.js";
+import type { ArborNode, ArborEdge } from "../graph/models.js";
 
 export class ArborStore {
   private db: Database.Database;
 
   constructor(dbPath: string) {
     this.db = new Database(dbPath);
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = ON');
+    this.db.pragma("journal_mode = WAL");
+    this.db.pragma("foreign_keys = ON");
     runMigrations(this.db);
   }
 
@@ -17,9 +17,9 @@ export class ArborStore {
   // ---------------------------------------------------------------------------
 
   getNode(id: string): ArborNode | undefined {
-    const row = this.db
-      .prepare('SELECT * FROM nodes WHERE id = ?')
-      .get(id) as Record<string, unknown> | undefined;
+    const row = this.db.prepare("SELECT * FROM nodes WHERE id = ?").get(id) as
+      | Record<string, unknown>
+      | undefined;
 
     if (!row) return undefined;
     return this.parseNode(row);
@@ -47,22 +47,16 @@ export class ArborStore {
   }
 
   deleteNode(id: string): void {
-    this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);
+    this.db.prepare("DELETE FROM nodes WHERE id = ?").run(id);
   }
 
   // ---------------------------------------------------------------------------
   // Edge operations
   // ---------------------------------------------------------------------------
 
-  getEdge(
-    sourceId: string,
-    targetId: string,
-    edgeType: string,
-  ): ArborEdge | undefined {
+  getEdge(sourceId: string, targetId: string, edgeType: string): ArborEdge | undefined {
     const row = this.db
-      .prepare(
-        'SELECT * FROM edges WHERE source_id = ? AND target_id = ? AND edge_type = ?',
-      )
+      .prepare("SELECT * FROM edges WHERE source_id = ? AND target_id = ? AND edge_type = ?")
       .get(sourceId, targetId, edgeType) as Record<string, unknown> | undefined;
 
     if (!row) return undefined;
@@ -87,9 +81,7 @@ export class ArborStore {
 
   deleteEdge(sourceId: string, targetId: string, edgeType: string): void {
     this.db
-      .prepare(
-        'DELETE FROM edges WHERE source_id = ? AND target_id = ? AND edge_type = ?',
-      )
+      .prepare("DELETE FROM edges WHERE source_id = ? AND target_id = ? AND edge_type = ?")
       .run(sourceId, targetId, edgeType);
   }
 
@@ -98,9 +90,10 @@ export class ArborStore {
   // ---------------------------------------------------------------------------
 
   getChildren(parentId: string): ArborNode[] {
-    const rows = this.db
-      .prepare('SELECT * FROM nodes WHERE parent_id = ?')
-      .all(parentId) as Record<string, unknown>[];
+    const rows = this.db.prepare("SELECT * FROM nodes WHERE parent_id = ?").all(parentId) as Record<
+      string,
+      unknown
+    >[];
 
     return rows.map((row) => this.parseNode(row));
   }
@@ -110,17 +103,15 @@ export class ArborStore {
   // ---------------------------------------------------------------------------
 
   getMeta(key: string): string | undefined {
-    const row = this.db
-      .prepare('SELECT value FROM graph_meta WHERE key = ?')
-      .get(key) as { value: string } | undefined;
+    const row = this.db.prepare("SELECT value FROM graph_meta WHERE key = ?").get(key) as
+      | { value: string }
+      | undefined;
 
     return row?.value;
   }
 
   setMeta(key: string, value: string): void {
-    this.db
-      .prepare('INSERT OR REPLACE INTO graph_meta (key, value) VALUES (?, ?)')
-      .run(key, value);
+    this.db.prepare("INSERT OR REPLACE INTO graph_meta (key, value) VALUES (?, ?)").run(key, value);
   }
 
   // ---------------------------------------------------------------------------
@@ -138,8 +129,8 @@ export class ArborStore {
   private parseNode(row: Record<string, unknown>): ArborNode {
     return {
       id: row.id as string,
-      level: row.level as ArborNode['level'],
-      node_type: row.node_type as ArborNode['node_type'],
+      level: row.level as ArborNode["level"],
+      node_type: row.node_type as ArborNode["node_type"],
       feature: row.feature as string,
       features: JSON.parse(row.features as string) as string[],
       metadata: JSON.parse(row.metadata as string) as Record<string, unknown>,
@@ -154,8 +145,8 @@ export class ArborStore {
     return {
       source_id: row.source_id as string,
       target_id: row.target_id as string,
-      edge_type: row.edge_type as ArborEdge['edge_type'],
-      category: row.category as ArborEdge['category'],
+      edge_type: row.edge_type as ArborEdge["edge_type"],
+      category: row.category as ArborEdge["category"],
       metadata: JSON.parse(row.metadata as string) as Record<string, unknown>,
     };
   }

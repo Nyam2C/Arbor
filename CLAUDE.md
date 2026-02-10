@@ -12,6 +12,7 @@
 **한 줄 설명**: `"A tree that remembers your codebase"`
 
 **핵심 원칙**:
+
 - MCP 서버는 바보(dumb data layer). 지능은 대화 컨텍스트의 Claude Code가 담당.
 - 별도 LLM API 호출 없음. FindBestParent 같은 의미적 판단은 Claude Code가 수행.
 - 모든 작업 단위가 다음 작업을 더 쉽게 만들어야 한다.
@@ -22,43 +23,44 @@
 
 ## 기술 스택 (확정)
 
-| 구성요소 | 선택 | 이유 |
-|----------|------|------|
-| 런타임 | Node.js 22+ | 사용자 풀 넓힘 |
-| 패키지 매니저 | pnpm | 빠름, 디스크 효율적 |
-| 언어 | TypeScript 5.x (ESM, strict) | 타입 안전성 |
-| 린터 | oxlint | Rust 기반, 빠름 |
-| 포매터 | @oxc/oxfmt (문제 시 Prettier 폴백) | Rust 기반 |
-| 테스트 | vitest + V8 coverage | thresholds: 70/70/70/55 |
-| DB | better-sqlite3 + FTS5 | 동기식, 빠름 |
-| AST | tree-sitter | 다중 언어 지원 |
-| 스키마 검증 | zod | 런타임 데이터 검증 |
-| MCP SDK | @modelcontextprotocol/sdk | Claude Code 연동 |
-| Git 조작 | simple-git | diff 파싱 |
-| 라이선스 | MIT | RPG-Encoder도 MIT |
+| 구성요소      | 선택                               | 이유                    |
+| ------------- | ---------------------------------- | ----------------------- |
+| 런타임        | Node.js 22+                        | 사용자 풀 넓힘          |
+| 패키지 매니저 | pnpm                               | 빠름, 디스크 효율적     |
+| 언어          | TypeScript 5.x (ESM, strict)       | 타입 안전성             |
+| 린터          | oxlint                             | Rust 기반, 빠름         |
+| 포매터        | oxfmt                              | Rust 기반, Prettier 호환 |
+| 테스트        | vitest + V8 coverage               | thresholds: 70/70/70/55 |
+| DB            | better-sqlite3 + FTS5              | 동기식, 빠름            |
+| AST           | tree-sitter                        | 다중 언어 지원          |
+| 스키마 검증   | zod                                | 런타임 데이터 검증      |
+| MCP SDK       | @modelcontextprotocol/sdk          | Claude Code 연동        |
+| Git 조작      | simple-git                         | diff 파싱               |
+| 라이선스      | MIT                                | RPG-Encoder도 MIT       |
 
 ---
 
 ## 핵심 설계 결정 (변경하지 말 것)
 
-| 결정 | 선택 | 이유 |
-|------|------|------|
-| 교훈 저장 | nodes 테이블에 통합 | 별도 insights 테이블 없음 |
-| 트리 구조 | 3단계 계층 | functional_area/category/subcategory |
-| 엣지 구조 | Triple-View | Growth(트리) + Root(의존성) + Knowledge(교훈↔코드) |
-| level 의미 | branch=추상(auto-prune), leaf=실체(persistent) | leaf→leaf parent_id 허용. file→class→method 자연 표현 |
-| parent_id vs growth edge | parent_id 정규, growth edge 트랜잭션 파생 | 트리 연산 최적, 단일 진실 원천 |
-| 새 노드 배치 | 미배치 + Claude Code graft | 서버는 바보, FindBestParent는 Claude Code가 수행 |
-| 변경 감지 | mtime 탐지 + git diff 분석 | mtime으로 빠르게, git diff로 정확하게 |
-| Stale 추적 | metadata에 `{ stale: true }` | 수정된 노드 무조건 stale |
-| Rename 처리 | 삭제 + 추가 | 단순함 우선, feature/Edge 유실 허용 |
-| Scan 모드 | --merge / --sync / --force | 기존 그래프 있을 때 모드 필수 |
+| 결정                     | 선택                                           | 이유                                                  |
+| ------------------------ | ---------------------------------------------- | ----------------------------------------------------- |
+| 교훈 저장                | nodes 테이블에 통합                            | 별도 insights 테이블 없음                             |
+| 트리 구조                | 3단계 계층                                     | functional_area/category/subcategory                  |
+| 엣지 구조                | Triple-View                                    | Growth(트리) + Root(의존성) + Knowledge(교훈↔코드)    |
+| level 의미               | branch=추상(auto-prune), leaf=실체(persistent) | leaf→leaf parent_id 허용. file→class→method 자연 표현 |
+| parent_id vs growth edge | parent_id 정규, growth edge 트랜잭션 파생      | 트리 연산 최적, 단일 진실 원천                        |
+| 새 노드 배치             | 미배치 + Claude Code graft                     | 서버는 바보, FindBestParent는 Claude Code가 수행      |
+| 변경 감지                | mtime 탐지 + git diff 분석                     | mtime으로 빠르게, git diff로 정확하게                 |
+| Stale 추적               | metadata에 `{ stale: true }`                   | 수정된 노드 무조건 stale                              |
+| Rename 처리              | 삭제 + 추가                                    | 단순함 우선, feature/Edge 유실 허용                   |
+| Scan 모드                | --merge / --sync / --force                     | 기존 그래프 있을 때 모드 필수                         |
 
 ---
 
 ## 아키텍처
 
 ### 데이터 흐름
+
 ```
 Claude Code (지능)
   ├─ Read tool로 코드 읽기
@@ -72,6 +74,7 @@ Claude Code (지능)
 ```
 
 ### 트리 구조 (RPG-Encoder 기반)
+
 ```
 Root
 ├── Security/                        (Branch - functional_area)
@@ -93,12 +96,15 @@ Root
 ```
 
 ### 엣지 3종류
+
 - **Growth Edge** (category: "growth") — 트리 계층. parent_id에서 파생, 트랜잭션으로 동기화.
 - **Root Edge** (category: "root") — 의존성 (imports/invokes/inherits). 영향 분석용.
 - **Knowledge Edge** (category: "knowledge") — 교훈↔코드 연결. edgeType: "documents".
 
 ### parent_id 트랜잭션 규칙
+
 seed/graft/uproot에서 parent_id 변경 시 반드시 같은 트랜잭션에서 growth edge 동기화:
+
 ```
 BEGIN TRANSACTION
   1. nodes.parent_id = 새 부모
@@ -112,25 +118,28 @@ COMMIT
 ## MCP 도구 9개
 
 ### 쓰기 도구
-| 도구 | 동작 |
-|------|------|
-| `arbor_seed` | Leaf Node UPSERT. seed 시 `stale`/`unplaced` 자동 제거. parent_id 변경 시 growth edge 동기화. |
-| `arbor_graft` | Branch Node + Edge 생성. parentId로 growth edge 자동 파생. 대상 노드의 `unplaced` 제거. |
-| `arbor_uproot` | 삭제 + 고아 Branch 자동 정리 (branch만 prune, leaf는 보존). |
+
+| 도구           | 동작                                                                                          |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| `arbor_seed`   | Leaf Node UPSERT. seed 시 `stale`/`unplaced` 자동 제거. parent_id 변경 시 growth edge 동기화. |
+| `arbor_graft`  | Branch Node + Edge 생성. parentId로 growth edge 자동 파생. 대상 노드의 `unplaced` 제거.       |
+| `arbor_uproot` | 삭제 + 고아 Branch 자동 정리 (branch만 prune, leaf는 보존).                                   |
 
 ### 읽기 도구
-| 도구 | 동작 |
-|------|------|
-| `arbor_search` | FTS5 검색 + mtime stale 경고 포함. |
-| `arbor_fetch` | 노드 상세 + 자식 + 의존성 + stale 경고. `filter: "unplaced"\|"stale"` 지원. |
-| `arbor_explore` | BFS 순회 + stale 경고. |
+
+| 도구            | 동작                                                                        |
+| --------------- | --------------------------------------------------------------------------- |
+| `arbor_search`  | FTS5 검색 + mtime stale 경고 포함.                                          |
+| `arbor_fetch`   | 노드 상세 + 자식 + 의존성 + stale 경고. `filter: "unplaced"\|"stale"` 지원. |
+| `arbor_explore` | BFS 순회 + stale 경고.                                                      |
 
 ### 지식 도구
-| 도구 | 동작 |
-|------|------|
-| `arbor_plan` | FTS5로 코드+교훈 검색 + CLAUDE.md 파싱. |
+
+| 도구             | 동작                                                 |
+| ---------------- | ---------------------------------------------------- |
+| `arbor_plan`     | FTS5로 코드+교훈 검색 + CLAUDE.md 파싱.              |
 | `arbor_compound` | 교훈을 Leaf Node로 저장 + docs/solutions/ 이중 저장. |
-| `arbor_review` | Root Edge 영향 분석 + Knowledge Edge 교훈 수집. |
+| `arbor_review`   | Root Edge 영향 분석 + Knowledge Edge 교훈 수집.      |
 
 ---
 
@@ -213,15 +222,15 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 
 **반드시 이 순서대로 구현.** 각 Phase는 이전 Phase에 의존.
 
-| Phase | 내용 | 문서 | 검증 |
-|-------|------|------|------|
-| **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대 | `docs/plans/phase-0-project-init.md` | `pnpm build && npx arbor init` |
-| **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot) | `docs/plans/phase-1-mcp-server-write-tools.md` | Claude Code에서 arbor_seed 호출 |
-| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md` | seed → search → fetch → explore 파이프라인 |
-| **3** | 지식 레이어 (plan/compound/review) | `docs/plans/phase-3-knowledge-layer.md` | arbor_compound → 노드 + docs/ 파일 생성 |
-| **4** | AST 분석기 + 일괄 스캔 (merge/sync/force) | `docs/plans/phase-4-ast-analyzers.md` | `arbor init --scan` 동작 |
-| **5** | Git 연동 + 점진적 업데이트 + stale 관리 | `docs/plans/phase-5-git-integration.md` | 커밋 diff → 변경 함수 목록 반환 |
-| **6** | 통합 테스트 + npm 배포 + CLAUDE.md 워크플로우 | `docs/plans/phase-6-integration-stabilization.md` | Compound 루프 1사이클 완주 |
+| Phase | 내용                                           | 문서                                              | 검증                                       |
+| ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             |
+| **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot)       | `docs/plans/phase-1-mcp-server-write-tools.md`    | Claude Code에서 arbor_seed 호출            |
+| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 |
+| **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    |
+| **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   |
+| **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            |
+| **6** | 통합 테스트 + npm 배포 + CLAUDE.md 워크플로우  | `docs/plans/phase-6-integration-stabilization.md` | Compound 루프 1사이클 완주                 |
 
 ---
 
@@ -230,6 +239,7 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 모든 기능 개발은 이 루프를 따릅니다. Plan과 Review에 80%, Work와 Compound에 20%의 시간을 배분합니다.
 
 ### 1. Plan (계획)
+
 - [ ] 요구사항 파악 (무엇을, 왜, 제약조건)
 - [ ] 코드베이스에서 유사 패턴 조사
 - [ ] 외부 문서/모범 사례 조사
@@ -237,18 +247,21 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 - [ ] 계획의 완전성 검증
 
 ### 2. Work (실행)
+
 - [ ] 격리된 환경 설정 (git branch/worktree)
 - [ ] 계획을 단계별로 실행
 - [ ] 검증 실행 (테스트, 린트, 타입 체크)
 - [ ] 진행 상황 추적 및 이슈 대응
 
 ### 3. Review (검토)
+
 - [ ] 전문 리뷰 에이전트로 결과물 검토
 - [ ] 발견 사항을 P1/P2/P3로 분류
 - [ ] 에이전트 지원으로 발견 사항 해결
 - [ ] 수정 사항의 정확성 검증
 
 ### 4. Compound (축적)
+
 - [ ] 잘 된 점과 안 된 점 기록
 - [ ] YAML 프론트매터로 인사이트를 검색 가능하게 태그
 - [ ] 이 CLAUDE.md에 새로운 패턴/교훈 업데이트
@@ -259,22 +272,28 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 ## 코딩 컨벤션
 
 ### 파일/디렉토리 네이밍
+
 - **kebab-case** 사용: `user-profile.ts`, `auth-service/`
 - 컴포넌트 파일만 **PascalCase** 허용: `UserProfile.tsx`
 
 ### Git 커밋 메시지
+
 [Conventional Commits](https://www.conventionalcommits.org/) 형식:
+
 ```
 <type>(<scope>): <description>
 
 [optional body]
 ```
+
 **type**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `perf`
 
 ### 브랜치 네이밍
+
 ```
 <type>/<short-description>
 ```
+
 예시: `feat/user-auth`, `fix/login-race-condition`, `docs/api-reference`
 
 ---
@@ -288,11 +307,11 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 
 ## 리뷰 분류 기준 (P1/P2/P3)
 
-| 등급 | 의미 | 예시 | 조치 |
-|------|------|------|------|
-| **P1** | CRITICAL — 반드시 수정 | 보안 취약점, 데이터 손실, 트랜잭션 누락 | 머지 전 즉시 수정 |
-| **P2** | IMPORTANT — 수정 권장 | N+1 쿼리, 비즈니스 로직 위치 오류, 누락된 에러 핸들링 | 이번 PR 또는 후속 PR에서 수정 |
-| **P3** | MINOR — 개선 가능 | 미사용 변수, 가드 절 권장, 네이밍 개선 | 시간 여유 시 수정 |
+| 등급   | 의미                   | 예시                                                  | 조치                          |
+| ------ | ---------------------- | ----------------------------------------------------- | ----------------------------- |
+| **P1** | CRITICAL — 반드시 수정 | 보안 취약점, 데이터 손실, 트랜잭션 누락               | 머지 전 즉시 수정             |
+| **P2** | IMPORTANT — 수정 권장  | N+1 쿼리, 비즈니스 로직 위치 오류, 누락된 에러 핸들링 | 이번 PR 또는 후속 PR에서 수정 |
+| **P3** | MINOR — 개선 가능      | 미사용 변수, 가드 절 권장, 네이밍 개선                | 시간 여유 시 수정             |
 
 ---
 
@@ -311,9 +330,13 @@ status: resolved
 ---
 
 ## 문제
+
 ## 원인
+
 ## 해결
+
 ## 예방
+
 ## 관련 문서
 ```
 
@@ -329,10 +352,15 @@ status: draft | approved | in-progress | completed
 ---
 
 ## 목표
+
 ## 배경
+
 ## 접근 방식
+
 ## 영향받는 파일
+
 ## 엣지 케이스
+
 ## 검증 방법
 ```
 
@@ -348,7 +376,9 @@ status: exploring | decided
 ---
 
 ## 질문
+
 ## 선택지
+
 ## 결정
 ```
 
