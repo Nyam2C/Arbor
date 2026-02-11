@@ -24,7 +24,7 @@
     "lint": "oxlint .",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
-    "ci:test": "pnpm install --frozen-lockfile && pnpm build && pnpm lint && pnpm fmt:check && pnpm test"
+    "ci:test": "pnpm install --frozen-lockfile && pnpm build && pnpm lint && pnpm fmt && pnpm fmt:check && pnpm test"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
