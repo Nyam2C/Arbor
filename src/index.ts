@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { ArborStore } from "./storage/sqlite-store.js";
 import { loadConfig, saveConfig, ensureArborDir } from "./config.js";
+import { startServer } from "./server.js";
 
 const VERSION = "0.1.0";
 
@@ -49,6 +50,19 @@ function cmdInit(projectRoot: string, reset: boolean): void {
 
   const store = new ArborStore(dbPath);
   store.setMeta("project_root", projectRoot);
+
+  // Root sentinel 노드 생성
+  store.upsertNode({
+    id: "root",
+    level: "branch",
+    node_type: "functional_area",
+    feature: "Root",
+    features: [],
+    metadata: {},
+    parent_id: null,
+    feature_path: "",
+  });
+
   store.close();
 
   const config = loadConfig(projectRoot);
@@ -58,8 +72,17 @@ function cmdInit(projectRoot: string, reset: boolean): void {
   console.log(`  Database: ${dbPath}`);
 }
 
-function cmdServe(): void {
-  console.log("arbor serve: Phase 1에서 구현 예정.");
+async function cmdServe(projectRoot: string): Promise<void> {
+  const config = loadConfig(projectRoot);
+  const dbPath = path.resolve(projectRoot, config.dbPath);
+
+  if (!fs.existsSync(dbPath)) {
+    console.error("Error: .arbor/graph.db not found. Run 'arbor init' first.");
+    process.exit(1);
+  }
+
+  const store = new ArborStore(dbPath);
+  await startServer(store);
 }
 
 function cmdStatus(): void {
@@ -87,7 +110,7 @@ function main(): void {
       cmdInit(projectRoot, flags.has("--reset"));
       break;
     case "serve":
-      cmdServe();
+      cmdServe(projectRoot);
       break;
     case "status":
       cmdStatus();

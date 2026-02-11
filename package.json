@@ -27,6 +27,7 @@
     "ci:test": "pnpm install --frozen-lockfile && pnpm build && pnpm lint && pnpm fmt && pnpm fmt:check && pnpm test"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "better-sqlite3": "^11.7.0",
     "zod": "^3.24.0"
   },
