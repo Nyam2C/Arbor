@@ -14,15 +14,17 @@
     ".": "./dist/index.js"
   },
   "scripts": {
+    "setup": "pnpm install && pnpm build",
+    "dev": "pnpm build && node dist/index.js init --reset && tsx watch src/index.ts",
+    "dev:continue": "pnpm build && tsx watch src/index.ts",
     "build": "tsc",
-    "dev": "tsx watch src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint .",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
-    "ci:test": "pnpm build && pnpm lint && pnpm fmt:check && pnpm test"
+    "ci:test": "pnpm install --frozen-lockfile && pnpm build && pnpm lint && pnpm fmt:check && pnpm test"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
