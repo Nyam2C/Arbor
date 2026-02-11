@@ -23,20 +23,20 @@
 
 ## 기술 스택 (확정)
 
-| 구성요소      | 선택                               | 이유                    |
-| ------------- | ---------------------------------- | ----------------------- |
-| 런타임        | Node.js 22+                        | 사용자 풀 넓힘          |
-| 패키지 매니저 | pnpm                               | 빠름, 디스크 효율적     |
-| 언어          | TypeScript 5.x (ESM, strict)       | 타입 안전성             |
-| 린터          | oxlint                             | Rust 기반, 빠름         |
-| 포매터        | oxfmt                              | Rust 기반, Prettier 호환 |
-| 테스트        | vitest + V8 coverage               | thresholds: 70/70/70/55 |
-| DB            | better-sqlite3 + FTS5              | 동기식, 빠름            |
-| AST           | tree-sitter                        | 다중 언어 지원          |
-| 스키마 검증   | zod                                | 런타임 데이터 검증      |
-| MCP SDK       | @modelcontextprotocol/sdk          | Claude Code 연동        |
-| Git 조작      | simple-git                         | diff 파싱               |
-| 라이선스      | MIT                                | RPG-Encoder도 MIT       |
+| 구성요소      | 선택                         | 이유                     |
+| ------------- | ---------------------------- | ------------------------ |
+| 런타임        | Node.js 22+                  | 사용자 풀 넓힘           |
+| 패키지 매니저 | pnpm                         | 빠름, 디스크 효율적      |
+| 언어          | TypeScript 5.x (ESM, strict) | 타입 안전성              |
+| 린터          | oxlint                       | Rust 기반, 빠름          |
+| 포매터        | oxfmt                        | Rust 기반, Prettier 호환 |
+| 테스트        | vitest + V8 coverage         | thresholds: 70/70/70/55  |
+| DB            | better-sqlite3 + FTS5        | 동기식, 빠름             |
+| AST           | tree-sitter                  | 다중 언어 지원           |
+| 스키마 검증   | zod                          | 런타임 데이터 검증       |
+| MCP SDK       | @modelcontextprotocol/sdk    | Claude Code 연동         |
+| Git 조작      | simple-git                   | diff 파싱                |
+| 라이선스      | MIT                          | RPG-Encoder도 MIT        |
 
 ---
 

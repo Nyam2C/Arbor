@@ -21,7 +21,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint .",
     "fmt": "oxfmt .",
-    "fmt:check": "oxfmt --check ."
+    "fmt:check": "oxfmt --check .",
+    "ci:test": "pnpm build && pnpm lint && pnpm fmt:check && pnpm test"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
