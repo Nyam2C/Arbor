@@ -5,10 +5,16 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 export const NodeTypeSchema = z.enum([
+  // branch types (3단계 계층)
+  "functional_area",
+  "category",
+  "subcategory",
+  // leaf types (코드)
   "file",
   "class",
   "function",
   "method",
+  // leaf types (교훈)
   "solution",
   "pattern",
   "pitfall",

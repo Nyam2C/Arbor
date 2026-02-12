@@ -17,26 +17,26 @@
 - 별도 LLM API 호출 없음. FindBestParent 같은 의미적 판단은 Claude Code가 수행.
 - 모든 작업 단위가 다음 작업을 더 쉽게 만들어야 한다.
 
-**현재 상태**: 계획 완료, Phase 0 구현 시작 단계.
+**현재 상태**: Phase 1 완료 (`feat/mcp-write-tools` 브랜치). PR 대기 중.
 
 ---
 
 ## 기술 스택 (확정)
 
-| 구성요소      | 선택                         | 이유                     |
-| ------------- | ---------------------------- | ------------------------ |
-| 런타임        | Node.js 22+                  | 사용자 풀 넓힘           |
-| 패키지 매니저 | pnpm                         | 빠름, 디스크 효율적      |
-| 언어          | TypeScript 5.x (ESM, strict) | 타입 안전성              |
-| 린터          | oxlint                       | Rust 기반, 빠름          |
-| 포매터        | oxfmt                        | Rust 기반, Prettier 호환 |
-| 테스트        | vitest + V8 coverage         | thresholds: 70/70/70/55  |
-| DB            | better-sqlite3 + FTS5        | 동기식, 빠름             |
-| AST           | tree-sitter                  | 다중 언어 지원           |
-| 스키마 검증   | zod                          | 런타임 데이터 검증       |
-| MCP SDK       | @modelcontextprotocol/sdk    | Claude Code 연동         |
-| Git 조작      | simple-git                   | diff 파싱                |
-| 라이선스      | MIT                          | RPG-Encoder도 MIT        |
+| 구성요소      | 선택                         | 이유                     | 설치 상태       |
+| ------------- | ---------------------------- | ------------------------ | --------------- |
+| 런타임        | Node.js 22+                  | 사용자 풀 넓힘           | ✅ 설치됨       |
+| 패키지 매니저 | pnpm                         | 빠름, 디스크 효율적      | ✅ 설치됨       |
+| 언어          | TypeScript 5.x (ESM, strict) | 타입 안전성              | ✅ 설치됨       |
+| 린터          | oxlint                       | Rust 기반, 빠름          | ✅ 설치됨       |
+| 포매터        | oxfmt                        | Rust 기반, Prettier 호환 | ✅ 설치됨       |
+| 테스트        | vitest + V8 coverage         | thresholds: 70/70/70/55  | ✅ 설치됨       |
+| DB            | better-sqlite3 + FTS5        | 동기식, 빠름             | ✅ 설치됨       |
+| 스키마 검증   | zod                          | 런타임 데이터 검증       | ✅ 설치됨       |
+| MCP SDK       | @modelcontextprotocol/sdk    | Claude Code 연동         | ✅ 설치됨       |
+| Git 조작      | simple-git                   | diff 파싱                | ⬜ Phase 5 설치 |
+| AST           | tree-sitter                  | 다중 언어 지원           | ⬜ Phase 4 설치 |
+| 라이선스      | MIT                          | RPG-Encoder도 MIT        | ✅ 적용됨       |
 
 ---
 
@@ -117,7 +117,7 @@ COMMIT
 
 ## MCP 도구 9개
 
-### 쓰기 도구
+### 쓰기 도구 (Phase 1 — ✅ 구현 완료)
 
 | 도구           | 동작                                                                                          |
 | -------------- | --------------------------------------------------------------------------------------------- |
@@ -125,7 +125,7 @@ COMMIT
 | `arbor_graft`  | Branch Node + Edge 생성. parentId로 growth edge 자동 파생. 대상 노드의 `unplaced` 제거.       |
 | `arbor_uproot` | 삭제 + 고아 Branch 자동 정리 (branch만 prune, leaf는 보존).                                   |
 
-### 읽기 도구
+### 읽기 도구 (Phase 2)
 
 | 도구            | 동작                                                                        |
 | --------------- | --------------------------------------------------------------------------- |
@@ -133,7 +133,7 @@ COMMIT
 | `arbor_fetch`   | 노드 상세 + 자식 + 의존성 + stale 경고. `filter: "unplaced"\|"stale"` 지원. |
 | `arbor_explore` | BFS 순회 + stale 경고.                                                      |
 
-### 지식 도구
+### 지식 도구 (Phase 3)
 
 | 도구             | 동작                                                 |
 | ---------------- | ---------------------------------------------------- |
@@ -145,59 +145,71 @@ COMMIT
 
 ## 디렉토리 구조
 
+> ✅ = 존재함, ⬜ = 미구현 (해당 Phase에서 생성 예정)
+
 ```
 Arbor/
-├── CLAUDE.md                          # 에이전트 소스 오브 트루스 (이 파일)
-├── HANDOFF.md                         # 세션 간 인수인계 문서
-├── .mcp.json                          # MCP 서버 등록
-├── package.json
-├── tsconfig.json
-├── oxlintrc.json
-├── vitest.config.ts
+├── CLAUDE.md                          # ✅ 에이전트 소스 오브 트루스 (이 파일)
+├── .mcp.json                          # ✅ MCP 서버 등록
+├── package.json                       # ✅
+├── tsconfig.json                      # ✅
+├── oxlintrc.json                      # ✅
+├── .oxfmt.json                        # ✅
+├── vitest.config.ts                   # ✅
+├── .github/workflows/ci.yml          # ✅ CI 파이프라인
 │
 ├── src/
-│   ├── index.ts                       # CLI 엔트리포인트 (init, serve, status, update)
-│   ├── server.ts                      # MCP 서버 + 9개 도구 등록
-│   ├── config.ts                      # .arbor/config.json 관리
+│   ├── index.ts                       # ✅ CLI 엔트리포인트 (init, serve 동작. status/update는 스텁)
+│   ├── config.ts                      # ✅ .arbor/config.json 관리
+│   ├── server.ts                      # ✅ MCP 서버 + 쓰기 도구 3개 등록
 │   │
 │   ├── tools/                         # MCP 도구 구현
-│   │   ├── seed.ts, graft.ts, uproot.ts
-│   │   ├── search.ts, fetch.ts, explore.ts
-│   │   └── plan.ts, compound.ts, review.ts
+│   │   ├── seed.ts, graft.ts, uproot.ts       # ✅ Phase 1
+│   │   ├── search.ts, fetch.ts, explore.ts    # Phase 2
+│   │   └── plan.ts, compound.ts, review.ts    # Phase 3
 │   │
 │   ├── graph/
-│   │   ├── models.ts                  # Zod 스키마
-│   │   ├── traversal.ts              # BFS/DFS
-│   │   └── pruner.ts                 # 고아 Branch 정리 (leaf 보존)
+│   │   ├── models.ts                  # ✅ Zod 스키마 (Node, Edge, 타입 정의)
+│   │   ├── traversal.ts              # ⬜ BFS/DFS (Phase 2)
+│   │   └── pruner.ts                 # ✅ 고아 Branch 정리
 │   │
-│   ├── analyzers/                     # Phase 4
+│   ├── analyzers/                     # ⬜ Phase 4
 │   │   ├── base.ts, typescript-analyzer.ts, python-analyzer.ts
 │   │   ├── dependency-extractor.ts
 │   │   ├── scanner.ts                 # init --scan 엔진
 │   │   └── trie.ts                    # Prefix Tree (LCA)
 │   │
-│   ├── knowledge/                     # Phase 3
+│   ├── knowledge/                     # ⬜ Phase 3
 │   │   └── solutions.ts, patterns.ts, writer.ts
 │   │
 │   ├── storage/
-│   │   ├── sqlite-store.ts, migrations.ts, cache.ts
+│   │   ├── sqlite-store.ts           # ✅ CRUD 오퍼레이션
+│   │   ├── migrations.ts             # ✅ SQLite 스키마 + FTS5
+│   │   └── cache.ts                  # ⬜ Phase 2
 │   │
-│   └── git/                           # Phase 5
+│   └── git/                           # ⬜ Phase 5
 │       └── diff-parser.ts, hooks.ts
 │
-├── tests/                             # vitest
-├── docs/
-│   ├── plans/                         # Phase 0~6 계획 문서
-│   ├── brainstorms/
-│   └── solutions/
+├── tests/
+│   ├── setup.test.ts                 # ✅ 플레이스홀더
+│   ├── pruner.test.ts, seed.test.ts  # ✅ Phase 1 테스트
+│   └── graft.test.ts, uproot.test.ts # ✅ Phase 1 테스트
 │
-└── .arbor/                            # gitignored, 실행 시 생성
-    ├── graph.db, cache.db, config.json
+├── docs/
+│   ├── plans/                         # ✅ Phase 0~6 계획 문서 (7개 파일)
+│   ├── brainstorms/                   # ✅ 빈 디렉토리 (.gitkeep)
+│   └── solutions/                     # ✅ 빈 디렉토리 (.gitkeep)
+│
+└── .arbor/                            # ✅ gitignored, `arbor init`으로 생성
+    ├── graph.db                       # ✅ SQLite (nodes, edges, nodes_fts, graph_meta)
+    └── config.json                    # ✅ 프로젝트 설정
 ```
 
 ---
 
 ## 커맨드 레퍼런스
+
+### 개발 커맨드
 
 ```bash
 pnpm install                    # 의존성 설치
@@ -206,14 +218,21 @@ pnpm test                       # vitest 실행
 pnpm lint                       # oxlint 실행
 pnpm fmt                        # oxfmt 포매팅
 pnpm fmt:check                  # 포매팅 검사
-pnpm dev                        # tsx watch 개발 서버
+pnpm dev                        # 빌드 → DB 리셋 → tsx watch
+pnpm dev:continue               # 빌드 → tsx watch (DB 유지)
+pnpm ci:test                    # 전체 CI 파이프라인 (install → build → lint → fmt → test)
+```
 
-npx arbor init                  # .arbor/graph.db 생성 (빈 테이블)
-npx arbor init --scan           # 초기 스캔 포함 (Phase 4)
-npx arbor serve                 # MCP 서버 실행
-npx arbor status                # 그래프 상태 요약
-npx arbor update                # git diff 기반 점진적 업데이트 (Phase 5)
-npx arbor hooks install         # post-commit hook 설치 (Phase 5)
+### CLI 커맨드
+
+```bash
+npx arbor init                  # ✅ .arbor/graph.db 생성 (빈 테이블)
+npx arbor init --reset          # ✅ 기존 DB 삭제 후 재생성
+npx arbor init --scan           # ⬜ 초기 스캔 포함 (Phase 4)
+npx arbor serve                 # ✅ MCP 서버 실행 (stdio transport)
+npx arbor status                # ⬜ 그래프 상태 요약
+npx arbor update                # ⬜ git diff 기반 점진적 업데이트 (Phase 5)
+npx arbor hooks install         # ⬜ post-commit hook 설치 (Phase 5)
 ```
 
 ---
@@ -222,15 +241,37 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 
 **반드시 이 순서대로 구현.** 각 Phase는 이전 Phase에 의존.
 
-| Phase | 내용                                           | 문서                                              | 검증                                       |
-| ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
-| **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             |
-| **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot)       | `docs/plans/phase-1-mcp-server-write-tools.md`    | Claude Code에서 arbor_seed 호출            |
-| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 |
-| **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    |
-| **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   |
-| **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            |
-| **6** | 통합 테스트 + npm 배포 + CLAUDE.md 워크플로우  | `docs/plans/phase-6-integration-stabilization.md` | Compound 루프 1사이클 완주                 |
+| Phase | 내용                                           | 문서                                              | 검증                                       | 상태         |
+| ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ | ------------ |
+| **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             | ✅ 완료      |
+| **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot)       | `docs/plans/phase-1-mcp-server-write-tools.md`    | Claude Code에서 arbor_seed 호출            | ✅ 구현 완료 |
+| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ⬜ 대기      |
+| **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    | ⬜ 대기      |
+| **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   | ⬜ 대기      |
+| **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            | ⬜ 대기      |
+| **6** | 통합 테스트 + npm 배포 + CLAUDE.md 워크플로우  | `docs/plans/phase-6-integration-stabilization.md` | Compound 루프 1사이클 완주                 | ⬜ 대기      |
+
+---
+
+## DB 스키마 (Phase 0에서 구현됨)
+
+```sql
+-- 노드 테이블
+nodes (id TEXT PK, level TEXT, node_type TEXT, feature TEXT,
+       features TEXT(JSON), metadata TEXT(JSON), parent_id TEXT FK,
+       feature_path TEXT, created_at TEXT, updated_at TEXT)
+
+-- 엣지 테이블
+edges (source_id TEXT FK, target_id TEXT FK, edge_type TEXT,
+       category TEXT, metadata TEXT(JSON),
+       PK(source_id, target_id, edge_type))
+
+-- FTS5 전문 검색
+nodes_fts (id, feature, features, feature_path) -- content=nodes
+
+-- 메타데이터
+graph_meta (key TEXT PK, value TEXT)  -- schema_version, project_root
+```
 
 ---
 
@@ -302,6 +343,13 @@ npx arbor hooks install         # post-commit hook 설치 (Phase 5)
 
 > 구현 중 발견된 코딩 함정과 해결책을 여기에 축적합니다.
 > 형식: `- **문제**: 설명 → **해결**: 설명`
+
+- **문제**: WSL 환경에서 한국어가 포함된 경로(`/mnt/c/Users/박/...`)로 `Edit` 도구 사용 시 간헐적 `ENOENT` 에러 → **해결**: `Read` → `Write` 전체 덮어쓰기 또는 `Bash` sed -i 사용
+- **문제**: 포매터 패키지명 혼동. `@oxc/oxfmt`는 존재하지 않음 → **해결**: 올바른 패키지명은 `oxfmt` (npm)
+- **문제**: pnpm에서 better-sqlite3, esbuild native 빌드 실패 → **해결**: `pnpm.onlyBuiltDependencies`에 명시적으로 추가
+- **문제**: Phase 0 NodeTypeSchema에 branch 타입(functional_area/category/subcategory) 누락 → **해결**: Phase 1 선행 수정에서 추가. 새 Phase 시작 전 스키마 완전성 검증 필요
+- **문제**: ArborStore에 트랜잭션 API 없이 쓰기 도구 구현 불가 → **해결**: `transaction<T>(fn)` 메서드 추가. 새 기능 계획 시 기존 API 충분성 먼저 확인
+- **문제**: MCP stdio 서버에서 console.log() 사용 시 JSON-RPC 프로토콜 깨짐 → **해결**: console.error()만 사용
 
 ---
 
@@ -407,7 +455,6 @@ status: exploring | decided
 
 ## 참조 자료
 
-- **HANDOFF.md** — 세션 간 인수인계 (전체 결정 이력, 미해결 P2/P3)
 - **RPG-Encoder 논문 분석**: `.claude/rpg-encoder-analysis.md`
 - **Compound Engineering 분석**: `.claude/compound-engineering-report.md`
 - **Phase 계획 문서**: `docs/plans/phase-{0..6}-*.md`
