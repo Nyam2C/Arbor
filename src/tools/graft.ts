@@ -26,7 +26,11 @@ export const GraftInputSchema = z.object({
 });
 
 export type GraftInput = z.infer<typeof GraftInputSchema>;
-export type GraftResult = { branchesCreated: number; branchesUpdated: number; edgesCreated: number };
+export type GraftResult = {
+  branchesCreated: number;
+  branchesUpdated: number;
+  edgesCreated: number;
+};
 
 // ---------------------------------------------------------------------------
 // 실행

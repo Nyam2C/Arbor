@@ -241,15 +241,15 @@ npx arbor hooks install         # ⬜ post-commit hook 설치 (Phase 5)
 
 **반드시 이 순서대로 구현.** 각 Phase는 이전 Phase에 의존.
 
-| Phase | 내용                                           | 문서                                              | 검증                                       | 상태       |
-| ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ | ---------- |
-| **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             | ✅ 완료    |
+| Phase | 내용                                           | 문서                                              | 검증                                       | 상태         |
+| ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ | ------------ |
+| **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             | ✅ 완료      |
 | **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot)       | `docs/plans/phase-1-mcp-server-write-tools.md`    | Claude Code에서 arbor_seed 호출            | ✅ 구현 완료 |
-| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ⬜ 대기    |
-| **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    | ⬜ 대기    |
-| **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   | ⬜ 대기    |
-| **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            | ⬜ 대기    |
-| **6** | 통합 테스트 + npm 배포 + CLAUDE.md 워크플로우  | `docs/plans/phase-6-integration-stabilization.md` | Compound 루프 1사이클 완주                 | ⬜ 대기    |
+| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ⬜ 대기      |
+| **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    | ⬜ 대기      |
+| **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   | ⬜ 대기      |
+| **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            | ⬜ 대기      |
+| **6** | 통합 테스트 + npm 배포 + CLAUDE.md 워크플로우  | `docs/plans/phase-6-integration-stabilization.md` | Compound 루프 1사이클 완주                 | ⬜ 대기      |
 
 ---
 
