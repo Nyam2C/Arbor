@@ -140,6 +140,23 @@ describe("executeSeed", () => {
     expect(store.getEdge("branch-b", "file1", "contains")).toBeDefined();
   });
 
+  it("parentId 제거 시 기존 growth edge를 정리한다", () => {
+    // branch-a 아래에 배치
+    executeSeed(store, {
+      nodes: [{ id: "file1", nodeType: "file", feature: "test", parentId: "branch-a" }],
+    });
+    expect(store.getEdge("branch-a", "file1", "contains")).toBeDefined();
+    expect(store.getNode("file1")!.metadata.unplaced).toBeUndefined();
+
+    // parentId 없이 re-seed → growth edge 정리 + unplaced 설정
+    executeSeed(store, {
+      nodes: [{ id: "file1", nodeType: "file", feature: "test" }],
+    });
+    expect(store.getEdge("branch-a", "file1", "contains")).toBeUndefined();
+    expect(store.getNode("file1")!.parent_id).toBeNull();
+    expect(store.getNode("file1")!.metadata.unplaced).toBe(true);
+  });
+
   it("교훈 노드(pitfall)를 저장한다", () => {
     executeSeed(store, {
       nodes: [

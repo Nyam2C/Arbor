@@ -6,7 +6,7 @@ import { pruneOrphans } from "../graph/pruner.js";
 // MCP 입력 스키마 (camelCase)
 // ---------------------------------------------------------------------------
 
-const EdgeKeySchema = z.object({
+export const EdgeKeySchema = z.object({
   sourceId: z.string(),
   targetId: z.string(),
   edgeType: z.string(),

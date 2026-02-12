@@ -6,7 +6,7 @@ import { NodeTypeSchema } from "../graph/models.js";
 // MCP 입력 스키마 (camelCase)
 // ---------------------------------------------------------------------------
 
-const SeedNodeSchema = z.object({
+export const SeedNodeSchema = z.object({
   id: z.string(),
   nodeType: NodeTypeSchema,
   feature: z.string(),
@@ -58,10 +58,10 @@ export function executeSeed(store: ArborStore, input: SeedInput): SeedResult {
       });
 
       // parentId 변경 시 growth edge 동기화
-      if (node.parentId) {
-        const oldParentId = existing?.parent_id;
+      const oldParentId = existing?.parent_id;
 
-        // 기존 growth edge 삭제
+      if (node.parentId) {
+        // 기존 growth edge 삭제 (parent 변경)
         if (oldParentId && oldParentId !== node.parentId) {
           store.deleteEdge(oldParentId, node.id, "contains");
         }
@@ -76,6 +76,9 @@ export function executeSeed(store: ArborStore, input: SeedInput): SeedResult {
             metadata: {},
           });
         }
+      } else if (oldParentId) {
+        // parentId 제거 시 기존 growth edge 정리
+        store.deleteEdge(oldParentId, node.id, "contains");
       }
 
       if (existing) {

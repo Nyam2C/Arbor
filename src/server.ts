@@ -2,10 +2,9 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { ArborStore } from "./storage/sqlite-store.js";
-import { NodeTypeSchema, EdgeTypeSchema, EdgeCategorySchema } from "./graph/models.js";
-import { executeSeed } from "./tools/seed.js";
-import { executeGraft } from "./tools/graft.js";
-import { executeUproot } from "./tools/uproot.js";
+import { SeedNodeSchema, executeSeed } from "./tools/seed.js";
+import { GraftBranchSchema, GraftEdgeSchema, executeGraft } from "./tools/graft.js";
+import { EdgeKeySchema, executeUproot } from "./tools/uproot.js";
 
 // ---------------------------------------------------------------------------
 // MCP 서버 생성 + 도구 등록
@@ -23,18 +22,7 @@ export function createServer(store: ArborStore): McpServer {
     {
       description: "Leaf Node를 그래프에 저장 (UPSERT). 코드 노드와 교훈 노드 모두 지원.",
       inputSchema: {
-        nodes: z
-          .array(
-            z.object({
-              id: z.string(),
-              nodeType: NodeTypeSchema,
-              feature: z.string(),
-              features: z.array(z.string()).default([]),
-              metadata: z.record(z.string(), z.unknown()).default({}),
-              parentId: z.string().nullable().optional(),
-            }),
-          )
-          .min(1),
+        nodes: z.array(SeedNodeSchema).min(1),
       },
     },
     async (args) => {
@@ -50,26 +38,8 @@ export function createServer(store: ArborStore): McpServer {
       description:
         "Branch Node와 Edge를 생성하여 트리 구조를 구축. parentId로 growth edge 자동 파생.",
       inputSchema: {
-        branches: z
-          .array(
-            z.object({
-              id: z.string(),
-              nodeType: z.enum(["functional_area", "category", "subcategory"]),
-              feature: z.string(),
-              parentId: z.string().nullable().optional(),
-            }),
-          )
-          .default([]),
-        edges: z
-          .array(
-            z.object({
-              sourceId: z.string(),
-              targetId: z.string(),
-              edgeType: EdgeTypeSchema,
-              category: EdgeCategorySchema,
-            }),
-          )
-          .default([]),
+        branches: z.array(GraftBranchSchema).default([]),
+        edges: z.array(GraftEdgeSchema).default([]),
       },
     },
     async (args) => {
@@ -88,15 +58,7 @@ export function createServer(store: ArborStore): McpServer {
       description: "노드 또는 Edge를 삭제. 삭제 후 고아 Branch를 자동 정리.",
       inputSchema: {
         nodeIds: z.array(z.string()).default([]),
-        edgeKeys: z
-          .array(
-            z.object({
-              sourceId: z.string(),
-              targetId: z.string(),
-              edgeType: z.string(),
-            }),
-          )
-          .default([]),
+        edgeKeys: z.array(EdgeKeySchema).default([]),
       },
     },
     async (args) => {

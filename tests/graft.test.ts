@@ -36,10 +36,28 @@ describe("executeGraft", () => {
       edges: [],
     });
     expect(result.branchesCreated).toBe(1);
+    expect(result.branchesUpdated).toBe(0);
 
     const node = store.getNode("sec");
     expect(node!.level).toBe("branch");
     expect(node!.node_type).toBe("functional_area");
+  });
+
+  it("기존 branch를 re-graft하면 updated로 카운트한다", () => {
+    executeGraft(store, {
+      branches: [{ id: "sec", nodeType: "functional_area", feature: "Security", parentId: "root" }],
+      edges: [],
+    });
+
+    const result = executeGraft(store, {
+      branches: [
+        { id: "sec", nodeType: "functional_area", feature: "Security v2", parentId: "root" },
+      ],
+      edges: [],
+    });
+    expect(result.branchesCreated).toBe(0);
+    expect(result.branchesUpdated).toBe(1);
+    expect(store.getNode("sec")!.feature).toBe("Security v2");
   });
 
   it("feature_path를 자동 구성한다", () => {

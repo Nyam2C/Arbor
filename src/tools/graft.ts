@@ -6,14 +6,14 @@ import { EdgeTypeSchema, EdgeCategorySchema } from "../graph/models.js";
 // MCP 입력 스키마 (camelCase)
 // ---------------------------------------------------------------------------
 
-const GraftBranchSchema = z.object({
+export const GraftBranchSchema = z.object({
   id: z.string(),
   nodeType: z.enum(["functional_area", "category", "subcategory"]),
   feature: z.string(),
   parentId: z.string().nullable().optional(),
 });
 
-const GraftEdgeSchema = z.object({
+export const GraftEdgeSchema = z.object({
   sourceId: z.string(),
   targetId: z.string(),
   edgeType: EdgeTypeSchema,
@@ -26,7 +26,7 @@ export const GraftInputSchema = z.object({
 });
 
 export type GraftInput = z.infer<typeof GraftInputSchema>;
-export type GraftResult = { branchesCreated: number; edgesCreated: number };
+export type GraftResult = { branchesCreated: number; branchesUpdated: number; edgesCreated: number };
 
 // ---------------------------------------------------------------------------
 // 실행
@@ -47,6 +47,7 @@ function buildFeaturePath(
 
 export function executeGraft(store: ArborStore, input: GraftInput): GraftResult {
   let branchesCreated = 0;
+  let branchesUpdated = 0;
   let edgesCreated = 0;
 
   store.transaction(() => {
@@ -82,7 +83,11 @@ export function executeGraft(store: ArborStore, input: GraftInput): GraftResult 
         });
       }
 
-      branchesCreated++;
+      if (existing) {
+        branchesUpdated++;
+      } else {
+        branchesCreated++;
+      }
     }
 
     // 2. Edge 생성 (growth 카테고리는 거부 — parentId로만 관리)
@@ -108,5 +113,5 @@ export function executeGraft(store: ArborStore, input: GraftInput): GraftResult 
     }
   });
 
-  return { branchesCreated, edgesCreated };
+  return { branchesCreated, branchesUpdated, edgesCreated };
 }
