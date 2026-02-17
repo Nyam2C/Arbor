@@ -17,7 +17,7 @@
 - 별도 LLM API 호출 없음. FindBestParent 같은 의미적 판단은 Claude Code가 수행.
 - 모든 작업 단위가 다음 작업을 더 쉽게 만들어야 한다.
 
-**현재 상태**: Phase 1 완료 (`feat/mcp-write-tools` 브랜치). PR 대기 중.
+**현재 상태**: Phase 2 구현 완료 (`feat/mcp-read-tools` 브랜치). 커밋/PR 대기 중.
 
 ---
 
@@ -161,16 +161,17 @@ Arbor/
 ├── src/
 │   ├── index.ts                       # ✅ CLI 엔트리포인트 (init, serve 동작. status/update는 스텁)
 │   ├── config.ts                      # ✅ .arbor/config.json 관리
-│   ├── server.ts                      # ✅ MCP 서버 + 쓰기 도구 3개 등록
+│   ├── server.ts                      # ✅ MCP 서버 + 도구 6개 등록
 │   │
 │   ├── tools/                         # MCP 도구 구현
 │   │   ├── seed.ts, graft.ts, uproot.ts       # ✅ Phase 1
-│   │   ├── search.ts, fetch.ts, explore.ts    # Phase 2
-│   │   └── plan.ts, compound.ts, review.ts    # Phase 3
+│   │   ├── search.ts, fetch.ts, explore.ts    # ✅ Phase 2
+│   │   └── plan.ts, compound.ts, review.ts    # ⬜ Phase 3
 │   │
 │   ├── graph/
 │   │   ├── models.ts                  # ✅ Zod 스키마 (Node, Edge, 타입 정의)
-│   │   ├── traversal.ts              # ⬜ BFS/DFS (Phase 2)
+│   │   ├── traversal.ts              # ✅ BFS 순회 엔진 (Phase 2)
+│   │   ├── utils.ts                  # ✅ buildFeaturePath (Phase 2)
 │   │   └── pruner.ts                 # ✅ 고아 Branch 정리
 │   │
 │   ├── analyzers/                     # ⬜ Phase 4
@@ -183,17 +184,20 @@ Arbor/
 │   │   └── solutions.ts, patterns.ts, writer.ts
 │   │
 │   ├── storage/
-│   │   ├── sqlite-store.ts           # ✅ CRUD 오퍼레이션
+│   │   ├── sqlite-store.ts           # ✅ CRUD + 배치조회 + FTS5 검색
 │   │   ├── migrations.ts             # ✅ SQLite 스키마 + FTS5
-│   │   └── cache.ts                  # ⬜ Phase 2
 │   │
 │   └── git/                           # ⬜ Phase 5
 │       └── diff-parser.ts, hooks.ts
 │
 ├── tests/
 │   ├── setup.test.ts                 # ✅ 플레이스홀더
-│   ├── pruner.test.ts, seed.test.ts  # ✅ Phase 1 테스트
-│   └── graft.test.ts, uproot.test.ts # ✅ Phase 1 테스트
+│   ├── tools/                        # ✅ 도구 테스트
+│   │   ├── seed.test.ts, graft.test.ts, uproot.test.ts   # Phase 1
+│   │   └── search.test.ts, fetch.test.ts, explore.test.ts # Phase 2
+│   └── graph/                        # ✅ 그래프 테스트
+│       ├── pruner.test.ts            # Phase 1
+│       └── traversal.test.ts         # Phase 2
 │
 ├── docs/
 │   ├── plans/                         # ✅ Phase 0~6 계획 문서 (7개 파일)
@@ -245,7 +249,7 @@ npx arbor hooks install         # ⬜ post-commit hook 설치 (Phase 5)
 | ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ | ------------ |
 | **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             | ✅ 완료      |
 | **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot)       | `docs/plans/phase-1-mcp-server-write-tools.md`    | Claude Code에서 arbor_seed 호출            | ✅ 구현 완료 |
-| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ⬜ 대기      |
+| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ✅ 구현 완료|
 | **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    | ⬜ 대기      |
 | **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   | ⬜ 대기      |
 | **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            | ⬜ 대기      |
