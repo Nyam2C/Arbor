@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { ArborStore } from "../src/storage/sqlite-store.js";
-import { executeGraft } from "../src/tools/graft.js";
-import { executeSeed } from "../src/tools/seed.js";
-import { executeFetch } from "../src/tools/fetch.js";
+import { ArborStore } from "../../src/storage/sqlite-store.js";
+import { executeGraft } from "../../src/tools/graft.js";
+import { executeSeed } from "../../src/tools/seed.js";
+import { executeFetch } from "../../src/tools/fetch.js";
 
 const TEST_DB = path.resolve("tests/.test-fetch.db");
 

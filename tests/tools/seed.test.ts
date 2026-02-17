@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { ArborStore } from "../src/storage/sqlite-store.js";
-import { executeSeed } from "../src/tools/seed.js";
+import { ArborStore } from "../../src/storage/sqlite-store.js";
+import { executeSeed } from "../../src/tools/seed.js";
 
 const TEST_DB = path.resolve("tests/.test-seed.db");
 

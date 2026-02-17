@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { ArborStore } from "../src/storage/sqlite-store.js";
-import { pruneOrphans } from "../src/graph/pruner.js";
-import type { ArborNode } from "../src/graph/models.js";
+import { ArborStore } from "../../src/storage/sqlite-store.js";
+import { pruneOrphans } from "../../src/graph/pruner.js";
+import type { ArborNode } from "../../src/graph/models.js";
 
 const TEST_DB = path.resolve("tests/.test-pruner.db");
 

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { ArborStore } from "../src/storage/sqlite-store.js";
-import { executeGraft } from "../src/tools/graft.js";
-import { executeSeed } from "../src/tools/seed.js";
-import { traverse, getImpactRadius } from "../src/graph/traversal.js";
+import { ArborStore } from "../../src/storage/sqlite-store.js";
+import { executeGraft } from "../../src/tools/graft.js";
+import { executeSeed } from "../../src/tools/seed.js";
+import { traverse, getImpactRadius } from "../../src/graph/traversal.js";
 
 const TEST_DB = path.resolve("tests/.test-traversal.db");
 
