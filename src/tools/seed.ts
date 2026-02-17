@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ArborStore } from "../storage/sqlite-store.js";
 import { NodeTypeSchema } from "../graph/models.js";
+import { buildFeaturePath } from "../graph/utils.js";
 
 // ---------------------------------------------------------------------------
 // MCP 입력 스키마 (camelCase)
@@ -44,6 +45,9 @@ export function executeSeed(store: ArborStore, input: SeedInput): SeedResult {
         delete metadata.unplaced;
       }
 
+      // feature_path 계산 (부모 체인 기반)
+      const featurePath = buildFeaturePath(store, node.parentId ?? null, node.feature);
+
       // upsertNode (created_at 보존)
       store.upsertNode({
         id: node.id,
@@ -53,7 +57,7 @@ export function executeSeed(store: ArborStore, input: SeedInput): SeedResult {
         features: node.features,
         metadata,
         parent_id: node.parentId ?? null,
-        feature_path: "",
+        feature_path: featurePath,
         created_at: existing?.created_at,
       });
 

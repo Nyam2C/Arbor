@@ -5,6 +5,10 @@ import type { ArborStore } from "./storage/sqlite-store.js";
 import { SeedNodeSchema, executeSeed } from "./tools/seed.js";
 import { GraftBranchSchema, GraftEdgeSchema, executeGraft } from "./tools/graft.js";
 import { EdgeKeySchema, executeUproot } from "./tools/uproot.js";
+import { executeSearch } from "./tools/search.js";
+import { validateFetchInput, executeFetch } from "./tools/fetch.js";
+import { executeExplore } from "./tools/explore.js";
+import { NodeTypeSchema, EdgeTypeSchema, EdgeCategorySchema } from "./graph/models.js";
 
 // ---------------------------------------------------------------------------
 // MCP 서버 생성 + 도구 등록
@@ -66,6 +70,65 @@ export function createServer(store: ArborStore): McpServer {
         nodeIds: args.nodeIds,
         edgeKeys: args.edgeKeys,
       });
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    },
+  );
+
+  // --- arbor_search: FTS5 검색 ---
+  server.registerTool(
+    "arbor_search",
+    {
+      description: "FTS5 검색 + mtime stale 경고 포함.",
+      inputSchema: {
+        query: z.string().min(1),
+        mode: z.enum(["features", "snippets", "auto"]).default("auto"),
+        scope: z.array(z.string()).default([]),
+        maxResults: z.number().int().min(1).max(100).default(20),
+        nodeTypeFilter: z.array(NodeTypeSchema).default([]),
+      },
+    },
+    async (args) => {
+      const result = executeSearch(store, args);
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    },
+  );
+
+  // --- arbor_fetch: 노드 상세 조회 ---
+  server.registerTool(
+    "arbor_fetch",
+    {
+      description: "노드 상세 + 자식 + 의존성 + stale 경고. filter: unplaced|stale 지원.",
+      inputSchema: {
+        nodeIds: z.array(z.string()).default([]),
+        featurePaths: z.array(z.string()).default([]),
+        includeDependencies: z.boolean().default(false),
+        filter: z.enum(["unplaced", "stale"]).optional(),
+      },
+    },
+    async (args) => {
+      // MCP SDK가 .refine() 미지원 → 수동 검증
+      validateFetchInput(args);
+      const result = executeFetch(store, args);
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    },
+  );
+
+  // --- arbor_explore: BFS 순회 ---
+  server.registerTool(
+    "arbor_explore",
+    {
+      description: "BFS 순회 + stale 경고.",
+      inputSchema: {
+        startNodeIds: z.array(z.string()).min(1),
+        direction: z.enum(["upstream", "downstream", "both"]),
+        depth: z.number().int().min(1).max(10).default(3),
+        nodeTypeFilter: z.array(NodeTypeSchema).default([]),
+        edgeTypeFilter: z.array(EdgeTypeSchema).default([]),
+        edgeCategoryFilter: z.array(EdgeCategorySchema).default([]),
+      },
+    },
+    async (args) => {
+      const result = executeExplore(store, args);
       return { content: [{ type: "text", text: JSON.stringify(result) }] };
     },
   );
