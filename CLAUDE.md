@@ -17,7 +17,7 @@
 - 별도 LLM API 호출 없음. FindBestParent 같은 의미적 판단은 Claude Code가 수행.
 - 모든 작업 단위가 다음 작업을 더 쉽게 만들어야 한다.
 
-**현재 상태**: Phase 1 완료 (`feat/mcp-write-tools` 브랜치). PR 대기 중.
+**현재 상태**: Phase 2 구현 완료 (`feat/mcp-read-tools` 브랜치). 커밋/PR 대기 중.
 
 ---
 
@@ -161,16 +161,17 @@ Arbor/
 ├── src/
 │   ├── index.ts                       # ✅ CLI 엔트리포인트 (init, serve 동작. status/update는 스텁)
 │   ├── config.ts                      # ✅ .arbor/config.json 관리
-│   ├── server.ts                      # ✅ MCP 서버 + 쓰기 도구 3개 등록
+│   ├── server.ts                      # ✅ MCP 서버 + 도구 6개 등록
 │   │
 │   ├── tools/                         # MCP 도구 구현
 │   │   ├── seed.ts, graft.ts, uproot.ts       # ✅ Phase 1
-│   │   ├── search.ts, fetch.ts, explore.ts    # Phase 2
-│   │   └── plan.ts, compound.ts, review.ts    # Phase 3
+│   │   ├── search.ts, fetch.ts, explore.ts    # ✅ Phase 2
+│   │   └── plan.ts, compound.ts, review.ts    # ⬜ Phase 3
 │   │
 │   ├── graph/
 │   │   ├── models.ts                  # ✅ Zod 스키마 (Node, Edge, 타입 정의)
-│   │   ├── traversal.ts              # ⬜ BFS/DFS (Phase 2)
+│   │   ├── traversal.ts              # ✅ BFS 순회 엔진 (Phase 2)
+│   │   ├── utils.ts                  # ✅ buildFeaturePath (Phase 2)
 │   │   └── pruner.ts                 # ✅ 고아 Branch 정리
 │   │
 │   ├── analyzers/                     # ⬜ Phase 4
@@ -183,17 +184,20 @@ Arbor/
 │   │   └── solutions.ts, patterns.ts, writer.ts
 │   │
 │   ├── storage/
-│   │   ├── sqlite-store.ts           # ✅ CRUD 오퍼레이션
+│   │   ├── sqlite-store.ts           # ✅ CRUD + 배치조회 + FTS5 검색
 │   │   ├── migrations.ts             # ✅ SQLite 스키마 + FTS5
-│   │   └── cache.ts                  # ⬜ Phase 2
 │   │
 │   └── git/                           # ⬜ Phase 5
 │       └── diff-parser.ts, hooks.ts
 │
 ├── tests/
 │   ├── setup.test.ts                 # ✅ 플레이스홀더
-│   ├── pruner.test.ts, seed.test.ts  # ✅ Phase 1 테스트
-│   └── graft.test.ts, uproot.test.ts # ✅ Phase 1 테스트
+│   ├── tools/                        # ✅ 도구 테스트
+│   │   ├── seed.test.ts, graft.test.ts, uproot.test.ts   # Phase 1
+│   │   └── search.test.ts, fetch.test.ts, explore.test.ts # Phase 2
+│   └── graph/                        # ✅ 그래프 테스트
+│       ├── pruner.test.ts            # Phase 1
+│       └── traversal.test.ts         # Phase 2
 │
 ├── docs/
 │   ├── plans/                         # ✅ Phase 0~6 계획 문서 (7개 파일)
@@ -245,7 +249,7 @@ npx arbor hooks install         # ⬜ post-commit hook 설치 (Phase 5)
 | ----- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ | ------------ |
 | **0** | 환경 설정, Zod 모델, SQLite, CLI 뼈대          | `docs/plans/phase-0-project-init.md`              | `pnpm build && npx arbor init`             | ✅ 완료      |
 | **1** | MCP 서버 + 쓰기 도구 (seed/graft/uproot)       | `docs/plans/phase-1-mcp-server-write-tools.md`    | Claude Code에서 arbor_seed 호출            | ✅ 구현 완료 |
-| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ⬜ 대기      |
+| **2** | 읽기 도구 (search/fetch/explore) + mtime stale | `docs/plans/phase-2-read-tools.md`                | seed → search → fetch → explore 파이프라인 | ✅ 구현 완료 |
 | **3** | 지식 레이어 (plan/compound/review)             | `docs/plans/phase-3-knowledge-layer.md`           | arbor_compound → 노드 + docs/ 파일 생성    | ⬜ 대기      |
 | **4** | AST 분석기 + 일괄 스캔 (merge/sync/force)      | `docs/plans/phase-4-ast-analyzers.md`             | `arbor init --scan` 동작                   | ⬜ 대기      |
 | **5** | Git 연동 + 점진적 업데이트 + stale 관리        | `docs/plans/phase-5-git-integration.md`           | 커밋 diff → 변경 함수 목록 반환            | ⬜ 대기      |
@@ -307,6 +311,78 @@ graph_meta (key TEXT PK, value TEXT)  -- schema_version, project_root
 - [ ] YAML 프론트매터로 인사이트를 검색 가능하게 태그
 - [ ] 이 CLAUDE.md에 새로운 패턴/교훈 업데이트
 - [ ] 시스템이 다음에 자동으로 잡을 수 있는지 검증
+
+---
+
+## 행동 지침 (Behavioral Guidelines)
+
+> LLM 코딩 에이전트의 흔한 실수를 줄이기 위한 행동 원칙입니다.
+> Compound Engineering 루프 **전체에 걸쳐** 적용됩니다.
+> **트레이드오프:** 속도보다 신중함에 치우칩니다. 단순한 작업에는 판단에 맡기세요.
+
+### 1. 코딩 전에 생각하기
+
+**가정하지 말 것. 혼란을 숨기지 말 것. 트레이드오프를 드러낼 것.**
+
+> Compound Engineering의 Plan 단계를 보완하는 행동 원칙입니다.
+
+- 가정을 명시적으로 진술하라. 불확실하면 질문하라.
+- 여러 해석이 가능하면 모두 제시하라 — 조용히 하나를 선택하지 말 것.
+- 더 단순한 접근법이 있다면 말하라. 근거가 있으면 반론을 제기하라.
+- 불명확한 부분이 있으면 멈추고, 무엇이 혼란스러운지 명명하고, 질문하라.
+
+### 2. 단순함 우선 (Simplicity First)
+
+**문제를 해결하는 최소한의 코드. 추측성 구현 금지.**
+
+- 요청받지 않은 기능을 추가하지 말 것.
+- 한 번만 쓰이는 코드에 추상화를 만들지 말 것.
+- 요청받지 않은 "유연성"이나 "설정 가능성"을 넣지 말 것.
+- 불가능한 시나리오에 대한 에러 처리를 하지 말 것.
+- 200줄로 쓴 것이 50줄로 가능하면 다시 작성하라.
+
+자문: "시니어 엔지니어가 이게 과하다고 할까?" 그렇다면 단순화하라.
+
+### 3. 외과적 변경 (Surgical Changes)
+
+**필요한 것만 수정할 것. 자기가 만든 잔해만 정리할 것.**
+
+기존 코드 수정 시:
+
+- 인접 코드, 주석, 포매팅을 "개선"하지 말 것.
+- 깨지지 않은 것을 리팩터링하지 말 것.
+- 기존 스타일에 맞출 것 — 본인의 선호와 달라도.
+- 관련 없는 데드 코드를 발견하면 언급만 하고 삭제하지 말 것.
+
+자신의 변경으로 고아가 생겼을 때:
+
+- 자신의 변경으로 미사용된 import/변수/함수는 제거하라.
+- 기존에 있던 데드 코드는 요청받지 않는 한 제거하지 말 것.
+
+**검증 기준**: 변경된 모든 줄이 사용자의 요청에 직접 추적 가능해야 한다.
+
+### 4. 목표 기반 실행 (Goal-Driven Execution)
+
+**성공 기준을 정의하라. 검증될 때까지 반복하라.**
+
+> Compound Engineering의 Work와 Review 단계에서 적용되는 실행 원칙입니다.
+
+작업을 검증 가능한 목표로 변환하라:
+
+- "유효성 검사 추가" → "잘못된 입력 테스트 작성 후 통과시키기"
+- "버그 수정" → "재현 테스트 작성 후 통과시키기"
+- "X 리팩터링" → "리팩터링 전후 테스트 통과 확인"
+
+다단계 작업 시 간략한 계획을 명시:
+
+1. [단계] → 검증: [확인사항]
+2. [단계] → 검증: [확인사항]
+
+강한 성공 기준은 자율적 반복을 가능하게 한다. 약한 기준("되게 만들기")은 끊임없는 확인이 필요하다.
+
+---
+
+**이 지침이 작동하고 있다면:** diff에서 불필요한 변경이 줄고, 과도한 복잡성으로 인한 재작성이 줄고, 구현 후가 아닌 구현 전에 명확화 질문이 나옵니다.
 
 ---
 
