@@ -8,6 +8,7 @@ import { EdgeKeySchema, executeUproot } from "./tools/uproot.js";
 import { executeSearch } from "./tools/search.js";
 import { validateFetchInput, executeFetch } from "./tools/fetch.js";
 import { executeExplore } from "./tools/explore.js";
+import { executeCompound } from "./tools/compound.js";
 import { NodeTypeSchema, EdgeTypeSchema, EdgeCategorySchema } from "./graph/models.js";
 
 // ---------------------------------------------------------------------------
@@ -129,6 +130,27 @@ export function createServer(store: ArborStore): McpServer {
     },
     async (args) => {
       const result = executeExplore(store, args);
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    },
+  );
+
+  // --- arbor_compound: 교훈을 Leaf Node로 저장 + docs/solutions/ 이중 저장 ---
+  server.registerTool(
+    "arbor_compound",
+    {
+      description: "교훈을 Leaf Node로 저장 + docs/solutions/ 이중 저장.",
+      inputSchema: {
+        type: z.enum(["solution", "pattern", "pitfall"]),
+        title: z.string().min(1),
+        content: z.string().min(1),
+        tags: z.array(z.string()),
+        severity: z.enum(["P1", "P2", "P3"]).optional(),
+        relatedNodeIds: z.array(z.string()).optional(),
+        parentBranchId: z.string().optional(),
+      },
+    },
+    async (args) => {
+      const result = executeCompound(store, args);
       return { content: [{ type: "text", text: JSON.stringify(result) }] };
     },
   );
